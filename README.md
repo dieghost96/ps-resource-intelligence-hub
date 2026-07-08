@@ -3,6 +3,9 @@
 > An automation-first demand forecasting and staffing system for Professional Services
 > Salesforce · n8n · Claude AI · Google Sheets · Gmail
 
+<img width="671" height="751" alt="image" src="https://github.com/user-attachments/assets/da4448e4-2f16-4611-a43c-b3376df67f00" />
+
+
 ---
 
 ## What This Does
@@ -16,6 +19,9 @@ Every Monday at 8 AM, this system automatically:
 5. Sends a conditional Gmail alert if Fill Rate < 70% or Revenue at Risk > $100K
 
 No manual work. No spreadsheet gymnastics. Decisions before problems.
+
+<img width="1727" height="657" alt="image" src="https://github.com/user-attachments/assets/9cb3d74e-cb27-4a86-9163-7f2f875d08bc" />
+
 
 ---
 
