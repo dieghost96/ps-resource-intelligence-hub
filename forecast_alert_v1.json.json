@@ -1,0 +1,741 @@
+{
+  "name": "Weekly Resourcing Forecast",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks",
+              "triggerAtDay": [
+                1
+              ],
+              "triggerAtHour": 8
+            }
+          ]
+        }
+      },
+      "id": "ff56e56d-1bb7-4548-9556-72178f6699cc",
+      "name": "Every Monday 8AM CST",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1flIyB99HzFQ8GJvQUPIAN400n5Xd-ysHh7aA2_YfZBM",
+          "mode": "list",
+          "cachedResultName": "OS Resource Intelligence Hub",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1flIyB99HzFQ8GJvQUPIAN400n5Xd-ysHh7aA2_YfZBM/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "demand_data",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1flIyB99HzFQ8GJvQUPIAN400n5Xd-ysHh7aA2_YfZBM/edit#gid=0"
+        },
+        "options": {}
+      },
+      "id": "67e74d34-7491-4de0-95aa-03397e3e5ed3",
+      "name": "Read demand_data",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        224,
+        192
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "qpcDeCYt6ODksdg8",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1flIyB99HzFQ8GJvQUPIAN400n5Xd-ysHh7aA2_YfZBM",
+          "mode": "list",
+          "cachedResultName": "PS Resource Intelligence Hub",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1flIyB99HzFQ8GJvQUPIAN400n5Xd-ysHh7aA2_YfZBM/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 201439585,
+          "mode": "list",
+          "cachedResultName": "supply_data",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1flIyB99HzFQ8GJvQUPIAN400n5Xd-ysHh7aA2_YfZBM/edit#gid=201439585"
+        },
+        "options": {}
+      },
+      "id": "3f991a0a-fb50-48f4-a98e-033197c8e529",
+      "name": "Read supply_data",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        448,
+        192
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "qpcDeCYt6ODksdg8",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1flIyB99HzFQ8GJvQUPIAN400n5Xd-ysHh7aA2_YfZBM",
+          "mode": "list",
+          "cachedResultName": "PS Resource Intelligence Hub",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1flIyB99HzFQ8GJvQUPIAN400n5Xd-ysHh7aA2_YfZBM/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1495639188,
+          "mode": "list",
+          "cachedResultName": "current_state",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1flIyB99HzFQ8GJvQUPIAN400n5Xd-ysHh7aA2_YfZBM/edit#gid=1495639188"
+        },
+        "options": {}
+      },
+      "id": "b0c65afe-d913-4d04-b6bd-f68069ee8e0e",
+      "name": "Read current_state",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        704,
+        192
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "qpcDeCYt6ODksdg8",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "\n// ---- Load inputs ------------------------------------------------------\nconst demand = $('Read demand_data').all().map(i => i.json)\n  .filter(r => r && Object.keys(r).length > 0);\nconst supply = $('Read supply_data').all().map(i => i.json)\n  .filter(r => r && Object.keys(r).length > 0);\nconst prevRows = $('Read current_state').all().map(i => i.json)\n  .filter(r => r && Object.keys(r).length > 0);\nconst prev = prevRows.length ? prevRows[prevRows.length - 1] : null;\n\n// ---- Helpers ----------------------------------------------------------\nconst norm = (s) => String(s ?? '').trim().toLowerCase();\nconst toNum = (v) => {\n  if (v === null || v === undefined || v === '') return 0;\n  const n = parseFloat(String(v).replace(/[^0-9.\\-]/g, ''));\n  return isNaN(n) ? 0 : n;\n};\nconst toDate = (v) => {\n  if (!v) return null;\n  const d = new Date(v);\n  return isNaN(d.getTime()) ? null : d;\n};\nconst pick = (obj, keys) => {\n  for (const k of keys) {\n    if (obj[k] !== undefined && obj[k] !== null && obj[k] !== '') return obj[k];\n  }\n  return undefined;\n};\n\n// ---- Role matching ----------------------------------------------------\n// A role is filled when a not-yet-used resource matches on role + region\n// and is available on/before the project start date.\nconst usedResource = new Array(supply.length).fill(false);\nlet filled = 0;\nconst unfilled = [];\nlet revenueAtRisk = 0;\n\nfor (const d of demand) {\n  const roleNeeded = norm(pick(d, ['role_needed', 'role', 'role_required']));\n  const region = norm(pick(d, ['region', 'location']));\n  const startDate = toDate(pick(d, ['start_date', 'project_start_date', 'start']));\n\n  let matchIdx = -1;\n  for (let i = 0; i < supply.length; i++) {\n    if (usedResource[i]) continue;\n    const r = supply[i];\n    const roleMatch = norm(pick(r, ['role', 'role_name'])) === roleNeeded && roleNeeded !== '';\n    const regionMatch = norm(pick(r, ['region', 'location'])) === region;\n    const availFrom = toDate(pick(r, ['available_from', 'availability_date', 'available']));\n    const availMatch = (availFrom && startDate) ? (availFrom.getTime() <= startDate.getTime()) : true;\n    if (roleMatch && regionMatch && availMatch) { matchIdx = i; break; }\n  }\n\n  if (matchIdx >= 0) {\n    usedResource[matchIdx] = true;\n    filled++;\n  } else {\n    const rev = toNum(pick(d, ['revenue', 'revenue_at_risk', 'project_value', 'value', 'contract_value']));\n    revenueAtRisk += rev;\n    unfilled.push({\n      project: pick(d, ['project', 'project_name', 'account', 'client']) || 'Unknown',\n      role_needed: pick(d, ['role_needed', 'role', 'role_required']) || 'Unknown',\n      region: pick(d, ['region', 'location']) || 'Unknown',\n      start_date: pick(d, ['start_date', 'project_start_date', 'start']) || '',\n      revenue_at_risk: rev,\n    });\n  }\n}\n\nconst totalRoles = demand.length;\nconst fillRate = totalRoles > 0 ? filled / totalRoles : 0;\n\n// ---- Forecast Accuracy Delta -----------------------------------------\n// actual fill rate this run vs. last run's PREDICTED fill rate.\nlet forecastAccuracyDelta = null;\nif (prev && prev.predicted_fill_rate !== undefined && prev.predicted_fill_rate !== '') {\n  forecastAccuracyDelta = Number((fillRate - toNum(prev.predicted_fill_rate)).toFixed(4));\n}\n\n// ---- Summary text blocks for Claude ----------------------------------\nconst round1 = (n) => Math.round(n * 1000) / 10; // -> percent, 1 dp\n\nconst demandSummary =\n  'DEMAND SUMMARY\\n' +\n  'Total roles needed: ' + totalRoles + '\\n' +\n  'Roles filled: ' + filled + '\\n' +\n  'Roles unfilled: ' + unfilled.length + '\\n' +\n  (unfilled.length\n    ? 'Unfilled roles:\\n' + unfilled.map((u, i) =>\n        (i + 1) + '. ' + u.role_needed + ' | ' + u.region + ' | starts ' + u.start_date +\n        ' | project ' + u.project + ' | revenue at risk $' + u.revenue_at_risk).join('\\n')\n    : 'All demanded roles are filled.');\n\nconst roleCounts = {};\nfor (const r of supply) {\n  const key = (pick(r, ['role', 'role_name']) || 'Unknown') + ' | ' + (pick(r, ['region', 'location']) || 'Unknown');\n  roleCounts[key] = (roleCounts[key] || 0) + 1;\n}\nconst supplySummary =\n  'SUPPLY SUMMARY\\n' +\n  'Total resources: ' + supply.length + '\\n' +\n  'Resources already allocated this run: ' + usedResource.filter(Boolean).length + '\\n' +\n  'Bench (unallocated): ' + usedResource.filter(x => !x).length + '\\n' +\n  'Resource pool by role | region:\\n' +\n  Object.keys(roleCounts).map(k => '- ' + k + ': ' + roleCounts[k]).join('\\n');\n\n// ---- Claude prompt assembly ------------------------------------------\nconst runDate = $now.toFormat('yyyy-MM-dd');\n\nconst systemPrompt =\n  'You are a resource-planning forecasting analyst. Analyze the weekly demand vs. supply KPIs ' +\n  'and return ONLY a JSON object (no markdown, no prose outside JSON) matching this schema:\\n' +\n  '{\\n' +\n  '  \"headline\": string,\\n' +\n  '  \"narrative\": string,\\n' +\n  '  \"alert_required\": boolean,\\n' +\n  '  \"alert_severity\": \"none\" | \"low\" | \"medium\" | \"high\",\\n' +\n  '  \"key_risks\": string[],\\n' +\n  '  \"recommended_actions\": string[],\\n' +\n  '  \"predicted_fill_rate_next_week\": number\\n' +\n  '}\\n' +\n  'Set alert_required = true when fill rate is below 0.85, revenue at risk is material, ' +\n  'or forecast accuracy is deteriorating. predicted_fill_rate_next_week is a 0-1 decimal.';\n\nconst userPrompt =\n  'Run date: ' + runDate + '\\n\\n' +\n  'KPIs:\\n' +\n  '- Fill Rate: ' + round1(fillRate) + '% (' + filled + '/' + totalRoles + ')\\n' +\n  '- Unfilled Roles: ' + unfilled.length + '\\n' +\n  '- Revenue at Risk: $' + revenueAtRisk + '\\n' +\n  '- Forecast Accuracy Delta: ' + (forecastAccuracyDelta === null ? 'n/a (no prior baseline)' : forecastAccuracyDelta) + '\\n\\n' +\n  demandSummary + '\\n\\n' +\n  supplySummary;\n\nconst claudeBody = {\n  model: 'claude-sonnet-4-5',\n  max_tokens: 2000,\n  system: systemPrompt,\n  messages: [{ role: 'user', content: userPrompt }],\n};\n\nreturn [{\n  json: {\n    run_date: runDate,\n    total_roles: totalRoles,\n    filled_roles: filled,\n    unfilled_count: unfilled.length,\n    fill_rate: Number(fillRate.toFixed(4)),\n    fill_rate_pct: round1(fillRate),\n    revenue_at_risk: revenueAtRisk,\n    forecast_accuracy_delta: forecastAccuracyDelta,\n    unfilled_roles: unfilled,\n    demand_summary: demandSummary,\n    supply_summary: supplySummary,\n    claudeBody,\n  },\n}];\n"
+      },
+      "id": "91cb8d67-ccaf-45d6-ba55-2568406660af",
+      "name": "KPI Calculator",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        896,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "anthropicApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.claudeBody) }}",
+        "options": {}
+      },
+      "id": "74d28dac-68b4-436b-9bc4-b364d1c4233d",
+      "name": "Claude API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1120,
+        192
+      ],
+      "credentials": {
+        "anthropicApi": {
+          "id": "VANSLSqTdwNr7CDb",
+          "name": "Anthropic account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "\nconst res = ($input.all()[0] || {}).json || {};\n\nlet text = '';\nif (res && Array.isArray(res.content)) {\n  text = res.content.map(c => (c && c.text) ? c.text : '').join('');\n} else if (typeof res.completion === 'string') {\n  text = res.completion;\n} else if (typeof res.text === 'string') {\n  text = res.text;\n}\n\n// Strip markdown fences if present.\ntext = String(text).trim()\n  .replace(/^```json\\s*/i, '')\n  .replace(/^```\\s*/, '')\n  .replace(/```$/, '')\n  .trim();\n\nlet parsed;\ntry {\n  parsed = JSON.parse(text);\n} catch (e) {\n  parsed = {\n    headline: 'Forecast could not be parsed',\n    narrative: text,\n    alert_required: true,\n    alert_severity: 'medium',\n    key_risks: ['Claude output was not valid JSON'],\n    recommended_actions: ['Review the raw model response'],\n    predicted_fill_rate_next_week: null,\n    parse_error: true,\n  };\n}\n\nconst kpi = $('KPI Calculator').all()[0].json;\n\nconst toArr = (v) => Array.isArray(v) ? v : (v ? [String(v)] : []);\nconst keyRisks = toArr(parsed.key_risks);\nconst actions = toArr(parsed.recommended_actions);\n\nreturn [{\n  json: {\n    // KPIs\n    run_date: kpi.run_date,\n    total_roles: kpi.total_roles,\n    filled_roles: kpi.filled_roles,\n    unfilled_count: kpi.unfilled_count,\n    fill_rate: kpi.fill_rate,\n    fill_rate_pct: kpi.fill_rate_pct,\n    revenue_at_risk: kpi.revenue_at_risk,\n    forecast_accuracy_delta: kpi.forecast_accuracy_delta,\n    demand_summary: kpi.demand_summary,\n    supply_summary: kpi.supply_summary,\n    // Claude forecast\n    headline: parsed.headline || '',\n    narrative: parsed.narrative || '',\n    alert_required: parsed.alert_required === true,\n    alert_severity: parsed.alert_severity || 'none',\n    key_risks: keyRisks,\n    key_risks_text: keyRisks.join('\\n'),\n    recommended_actions: actions,\n    recommended_actions_text: actions.join('\\n'),\n    predicted_fill_rate: parsed.predicted_fill_rate_next_week ?? null,\n    parse_error: parsed.parse_error === true,\n    // fixed key so current_state overwrites the same row\n    state_key: 'current',\n  },\n}];\n"
+      },
+      "id": "2532f381-e4a1-4775-a94b-5cdbd3340bbb",
+      "name": "Parse Forecast",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1344,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "alert",
+              "leftValue": "={{ $json.alert_required }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "3ec56799-13d6-4f83-ad4b-56d79850acac",
+      "name": "IF alert_required",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1568,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "ideasguava@gmail.com",
+        "subject": "=[Resourcing Alert - {{ $json.alert_severity }}] Fill rate {{ $json.fill_rate_pct }}% — {{ $json.run_date }}",
+        "message": "=<div style=\"font-family:Arial,sans-serif;max-width:640px\">\n<h2 style=\"margin:0 0 4px\">Weekly Resourcing Forecast</h2>\n<p style=\"color:#666;margin:0 0 16px\">Run date: {{ $json.run_date }} &nbsp;|&nbsp; Severity: <strong>{{ $json.alert_severity }}</strong></p>\n<p style=\"font-size:15px\"><strong>{{ $json.headline }}</strong></p>\n<table style=\"border-collapse:collapse;margin:12px 0;font-size:14px\">\n<tr><td style=\"padding:4px 12px 4px 0\"><strong>Fill Rate</strong></td><td>{{ $json.fill_rate_pct }}% ({{ $json.filled_roles }}/{{ $json.total_roles }})</td></tr>\n<tr><td style=\"padding:4px 12px 4px 0\"><strong>Unfilled Roles</strong></td><td>{{ $json.unfilled_count }}</td></tr>\n<tr><td style=\"padding:4px 12px 4px 0\"><strong>Revenue at Risk</strong></td><td>${{ $json.revenue_at_risk }}</td></tr>\n<tr><td style=\"padding:4px 12px 4px 0\"><strong>Forecast Accuracy Delta</strong></td><td>{{ $json.forecast_accuracy_delta }}</td></tr>\n</table>\n<p>{{ $json.narrative }}</p>\n<h3 style=\"margin:16px 0 4px\">Key Risks</h3>\n<pre style=\"white-space:pre-wrap;font-family:Arial,sans-serif;font-size:14px\">{{ $json.key_risks_text }}</pre>\n<h3 style=\"margin:16px 0 4px\">Recommended Actions</h3>\n<pre style=\"white-space:pre-wrap;font-family:Arial,sans-serif;font-size:14px\">{{ $json.recommended_actions_text }}</pre>\n</div>",
+        "options": {}
+      },
+      "id": "62fb86f5-c2f2-4bcc-a596-4ca9b2892dcb",
+      "name": "Send Gmail alert",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1792,
+        0
+      ],
+      "webhookId": "53e6f3c8-770c-4b9c-afd4-63f217774b38",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "enNtjEKF6VdTZ1Yk",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1flIyB99HzFQ8GJvQUPIAN400n5Xd-ysHh7aA2_YfZBM",
+          "mode": "list",
+          "cachedResultName": "PS Resource Intelligence Hub",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1flIyB99HzFQ8GJvQUPIAN400n5Xd-ysHh7aA2_YfZBM/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 838796048,
+          "mode": "list",
+          "cachedResultName": "forecast_log",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1flIyB99HzFQ8GJvQUPIAN400n5Xd-ysHh7aA2_YfZBM/edit#gid=838796048"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "run_date": "={{ $now.toFormat('yyyy-MM-dd') }}",
+            "total_demand_roles": "=\t{{ $json.total_roles }}",
+            "filled_roles": "=\t{{ $json.filled_roles }}",
+            "unfilled_roles": "={{ $json.unfilled_count }}",
+            "fill_rate_pct": "=\t{{ $json.fill_rate_pct }}",
+            "total_required_hours": "=\t{{ $json.demand_summary }} ",
+            "covered_hours": "=",
+            "uncovered_hours": "=",
+            "revenue_at_risk_usd": "={{ $json.revenue_at_risk }}",
+            "forecast_accuracy_delta_pct": "={{ $json.forecast_accuracy_delta}}",
+            "claude_summary": "=\t{{ $json.narrative }}",
+            "alert_sent": "={{ $json.alert_required ? 'YES' : 'NO' }}",
+            "alert_reason": "=\t{{ $json.alert_reason ?? '' }}",
+            "headline": "=\t{{ $json.headline }}",
+            "key_risk": "=\t{{ $json.key_risks_text }}",
+            "recommended_actions": "={{ $json.recommended_actions_text }}",
+            "predicted_fill_rate": "=\t{{ $json.predicted_fill_rate }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "run_date",
+              "displayName": "run_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "total_demand_roles",
+              "displayName": "total_demand_roles",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "filled_roles",
+              "displayName": "filled_roles",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "unfilled_roles",
+              "displayName": "unfilled_roles",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "fill_rate_pct",
+              "displayName": "fill_rate_pct",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "total_required_hours",
+              "displayName": "total_required_hours",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "covered_hours",
+              "displayName": "covered_hours",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "uncovered_hours",
+              "displayName": "uncovered_hours",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "revenue_at_risk_usd",
+              "displayName": "revenue_at_risk_usd",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "forecast_accuracy_delta_pct",
+              "displayName": "forecast_accuracy_delta_pct",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "claude_summary",
+              "displayName": "claude_summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "alert_sent",
+              "displayName": "alert_sent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "alert_reason",
+              "displayName": "alert_reason",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "headline",
+              "displayName": "headline",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "key_risk",
+              "displayName": "key_risk",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "recommended_actions",
+              "displayName": "recommended_actions",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "predicted_fill_rate",
+              "displayName": "predicted_fill_rate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "968ef7f5-9d77-4422-adf8-0a3943e9e257",
+      "name": "Write forecast_log",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1568,
+        192
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "qpcDeCYt6ODksdg8",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1flIyB99HzFQ8GJvQUPIAN400n5Xd-ysHh7aA2_YfZBM",
+          "mode": "list",
+          "cachedResultName": "PS Resource Intelligence Hub",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1flIyB99HzFQ8GJvQUPIAN400n5Xd-ysHh7aA2_YfZBM/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1495639188,
+          "mode": "list",
+          "cachedResultName": "current_state",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1flIyB99HzFQ8GJvQUPIAN400n5Xd-ysHh7aA2_YfZBM/edit#gid=1495639188"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "run_date": "={{ $now.toFormat('yyyy-MM-dd') }}",
+            "fill_rate_pct": "=\t{{ $json.fill_rate_pct }}",
+            "unfilled_roles": "=\t{{ $json.unfilled_count }}",
+            "revenue_at_risk_usd": "={{ $json.revenue_at_risk }}",
+            "forecast_accuracy_delta_pct": "={{ $json.forecast_accuracy_delta }}",
+            "claude_summary": "=\t{{ $json.narrative }}",
+            "alert_sent": "={{ $json.alert_required ? 'YES' : 'NO' }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "run_date",
+              "displayName": "run_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "fill_rate_pct",
+              "displayName": "fill_rate_pct",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "unfilled_roles",
+              "displayName": "unfilled_roles",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "revenue_at_risk_usd",
+              "displayName": "revenue_at_risk_usd",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "forecast_accuracy_delta_pct",
+              "displayName": "forecast_accuracy_delta_pct",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "claude_summary",
+              "displayName": "claude_summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "alert_sent",
+              "displayName": "alert_sent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "0b438309-4fe9-4970-9422-efa50c775434",
+      "name": "Write current_state",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1600,
+        384
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "qpcDeCYt6ODksdg8",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "Schedule fires Monday 08:00 in the WORKFLOW timezone. Set the workflow timezone to your CST zone (Settings → Timezone), e.g. America/Chicago, so 8AM resolves to CST.",
+        "height": 200,
+        "width": 300
+      },
+      "id": "d2e4617a-1d9d-4d5f-835c-b40185e95ffd",
+      "name": "Sticky Note d2e4617a",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -48,
+        -48
+      ]
+    },
+    {
+      "parameters": {
+        "content": "Forecast Accuracy Delta = this run actual fill rate minus last run predicted fill rate, read back from the current_state tab. It is n/a on the very first run (no prior baseline).",
+        "height": 200,
+        "width": 300
+      },
+      "id": "70174a2f-0db5-48f6-8fd9-648c69d6e1b5",
+      "name": "Sticky Note 70174a2f",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -48,
+        -48
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Every Monday 8AM CST": {
+      "main": [
+        [
+          {
+            "node": "Read demand_data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read demand_data": {
+      "main": [
+        [
+          {
+            "node": "Read supply_data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read supply_data": {
+      "main": [
+        [
+          {
+            "node": "Read current_state",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read current_state": {
+      "main": [
+        [
+          {
+            "node": "KPI Calculator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "KPI Calculator": {
+      "main": [
+        [
+          {
+            "node": "Claude API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claude API": {
+      "main": [
+        [
+          {
+            "node": "Parse Forecast",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Forecast": {
+      "main": [
+        [
+          {
+            "node": "IF alert_required",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Write forecast_log",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Write current_state",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF alert_required": {
+      "main": [
+        [
+          {
+            "node": "Send Gmail alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "c7a175ba-0ddf-4168-b6bd-de65656781c1",
+  "meta": {
+    "instanceId": "738f8d74a20c3088d152cec96f2cf08c08ba28deb6c46ae193f179503b299bac"
+  },
+  "nodeGroups": [],
+  "id": "yA4eZGsV43AZ2V8P",
+  "tags": []
+}

@@ -1,0 +1,2 @@
+run_date,total_demand_roles,filled_roles,unfilled_roles,fill_rate_pct,total_required_hours,covered_hours,uncovered_hours,revenue_at_risk_usd,forecast_accuracy_delta_pct,claude_summary,alert_sent,alert_reason
+EXAMPLE-2026-07-07,8,5,3,62.5,2720,1680,1040,163800,14.2,"3 roles remain unstaffed in LATAM and NA. PRJ-002 (PM, 640 hrs) is critical with $112K revenue at risk. Recommend activating RES-008 (Chloe Dubois) before Aug 15.",YES,"Fill Rate 62.5% below 70%; Revenue at Risk $163,800 above $100K"

@@ -1,0 +1,10 @@
+resource_id,name,role,skills,region,utilization_pct,available_from,bench_status,seniority
+RES-001,Alex Torres,Senior Consultant,"CRM, Change Management, Training, Salesforce",LATAM,40,2026-07-15,Partial,Senior
+RES-002,Jamie Lin,Project Manager,"Agile, PSA, ServiceNow, Stakeholder Management",NA,0,2026-08-01,Full Bench,Senior
+RES-003,Morgan Smith,Data Engineer,"SQL, Python, ETL, Salesforce, dbt",EMEA,60,2026-09-15,Partial,Mid
+RES-004,Sofia Reyes,Business Analyst,"Requirements Gathering, Jira, CRM, Salesforce",LATAM,20,2026-07-20,Partial,Mid
+RES-005,Daniel Park,Solutions Architect,"AWS, Azure, Cloud Architecture, API Design",NA,80,2026-09-01,Rolling Off,Senior
+RES-006,Priya Nair,ServiceNow Consultant,"ServiceNow ITSM, ITOM, Flow Designer, CSM",EMEA,0,2026-08-01,Full Bench,Senior
+RES-007,Luis Mendez,Data Engineer,"SQL, Python, Power BI, ETL",LATAM,50,2026-10-01,Rolling Off,Mid
+RES-008,Chloe Dubois,Project Manager,"PMP, Waterfall, Agile, Risk Management",NA,30,2026-08-10,Partial,Senior
+RES-009,Yuki Tanaka,Senior Consultant,"ERP, Training, Change Management",EMEA,100,2026-11-01,Unavailable,Senior

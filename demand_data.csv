@@ -1,0 +1,9 @@
+project_id,project_name,client,region,role_needed,start_date,end_date,required_hours,stage,priority,billing_rate_usd
+PRJ-001,Digital Transformation Phase 1,Acme Corp,LATAM,Senior Consultant,2026-08-01,2026-11-30,480,Confirmed,High,150
+PRJ-002,ERP Core Implementation,TechCo Inc,NA,Project Manager,2026-08-15,2027-01-31,640,Proposed,High,175
+PRJ-003,Data Migration & Cleansing,FinServ Global,EMEA,Data Engineer,2026-09-01,2026-12-31,320,Confirmed,Medium,130
+PRJ-004,CRM Rollout - Phase 2,RetailNow,LATAM,Business Analyst,2026-08-01,2026-10-31,240,Confirmed,High,120
+PRJ-005,Cloud Infrastructure Audit,ManuTech,NA,Solutions Architect,2026-09-15,2026-12-15,200,Proposed,Medium,200
+PRJ-006,ServiceNow ITSM Setup,CoreLink,EMEA,ServiceNow Consultant,2026-08-01,2026-10-31,400,Confirmed,High,160
+PRJ-007,Analytics Dashboard Build,DataFirst,LATAM,Data Engineer,2026-10-01,2026-12-31,280,Proposed,Low,130
+PRJ-008,PMO Standup & Governance,AlphaRetail,NA,Project Manager,2026-08-15,2026-11-15,160,Confirmed,Medium,175
